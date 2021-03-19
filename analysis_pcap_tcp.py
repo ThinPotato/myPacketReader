@@ -80,7 +80,7 @@ for x in range(len(packetsList)-3):
         if(x > 1):
             for y in range(lastPacketBeforeCloseLocation, x-1):
                 packetSize += len(packetsList[y])
-        lastPacketBeforeCloseLocation = x-2
+        lastPacketBeforeCloseLocation = x-1
         print("size: ",packetSize, "bytes")
         
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
