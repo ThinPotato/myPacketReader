@@ -7,6 +7,8 @@ pcap = dpkt.pcap.Reader(rawPacket)
 flowCount = 0
 packetsList = []
 ipList = []
+lastPacketBeforeCloseLocation = 0
+packetSize = 0
 
 # Convert byte data to numbers
 def inet_to_str(inet):
@@ -74,6 +76,12 @@ for x in range(len(packetsList)-3):
         print("    Sequence number: ", packetsList[x+3].seq )
         print("    Ack number: ", packetsList[x+3].ack)
         print("    Window size: ", packetsList[x+3].win)
+        # Check for last sections final location
+        if(x > 1):
+            for y in range(lastPacketBeforeCloseLocation, x-1):
+                packetSize += len(packetsList[y])
+        lastPacketBeforeCloseLocation = x-2
+        print("size: ",packetSize, "bytes")
         
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 # Print total number of flows
