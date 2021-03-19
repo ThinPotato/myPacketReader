@@ -4,7 +4,9 @@ import socket
 # Grab raw binary information
 rawPacket = open('packet.pcap','rb')
 pcap = dpkt.pcap.Reader(rawPacket)
-numOfFlows = 0
+flowCount = 0
+packetsList = []
+ipList = []
 
 # Convert byte data to numbers
 def inet_to_str(inet):
@@ -15,42 +17,64 @@ def inet_to_str(inet):
         return socket.inet_ntop(socket.AF_INET6, inet)
 
 # Create a new flow and parse the data
-def new_flow(eth):
-    global numOfFlows
-    ip = eth.data
-    tcp = ip.data
+def new_flow():
+    global flowCount
+    global packetsList
+    global ipList
+    for i, buf in pcap:
+        eth = dpkt.ethernet.Ethernet(buf)
+        if eth.type != dpkt.ethernet.ETH_TYPE_IP:
+            # We are only interested in IP packets
+            continue
+        ip = eth.data
+        if ip.p != dpkt.ip.IP_PROTO_TCP:
+            # We are only interested in TCP
+            continue
+        tcp = ip.data
 
-    sPort = tcp.sport
-    sIP = inet_to_str(ip.src)
-    Dport = tcp.dport
-    dIP = inet_to_str(ip.dst)
+        # Count flows
+        if ((tcp.flags & dpkt.tcp.TH_SYN) and (tcp.flags & dpkt.tcp.TH_ACK)):
+            flowCount +=1
+             
+        # load into packetsList
+        packetsList.append(tcp)
+        ipList.append(ip)
 
-    # Count flows
-    if (sPort and sIP and Dport and dIP):
-        numOfFlows +=1
+        # TODO: should I combine all packets from same IP and port into a group?
+       
+        
+        
+        # # For the first two transactions, print the values of the
+        # # Seq number, Ack number, and Recieve window size
+       
 
-    # TODO: should I combine all packets from same IP and port into a group?
-    # Print Basic Data 
-    # part (a)
-    print("Source Port: ", tcp.sport)
-    print("Source IP: ", inet_to_str(ip.src))
-    print("Destination Port: ", tcp.dport)
-    print("Destination IP: ", inet_to_str(ip.dst))
-    
-    # For the first two transactions, print the values of the
-    # Seq number, Ack number, and Recieve window size
-    # part (b)
-    print("Sequence number: ", tcp.seq )
-    print("Ack number: ", tcp.ack)
-    print("Window size: ", tcp.win)
+        # #TODO: Print Sender throughput aka part (3)
 
-    #TODO: Print Sender throughput aka part (3)
+        #
+        
 
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+new_flow()
 
-# Iterate through packets in pcap
-for ts, buf in pcap:
-    new_flow(dpkt.ethernet.Ethernet(buf))
-
+#Check for 3 way handshakes
+for x in range(len(packetsList)-3):
+    #if ((packetsList[x].flags & dpkt.tcp.TH_SYN) and ((packetsList[x+1].flags & dpkt.tcp.TH_ACK) and (packetsList[x+1].flags & dpkt.tcp.TH_SYN) and packetsList[x+2].flags & dpkt.tcp.TH_ACK)):
+    if (packetsList[x].flags & dpkt.tcp.TH_SYN) and (packetsList[x].flags & dpkt.tcp.TH_ACK):
+        # Print Basic Data 
+            # part (a)
+        print("Source Port: ", packetsList[x].sport)
+        print("Source IP: ", inet_to_str(ipList[x].src))
+        print("Destination Port: ", packetsList[x].dport)
+        print("Destination IP: ", inet_to_str(ipList[x].dst))
+            # part (b)
+        print("\nFirst Transaction:")
+        print("    Sequence number: ", packetsList[x+2].seq )
+        print("    Ack number: ", packetsList[x+2].ack)
+        print("    Window size: ", packetsList[x+2].win)
+        print("\nSecond Transaction:")
+        print("    Sequence number: ", packetsList[x+3].seq )
+        print("    Ack number: ", packetsList[x+3].ack)
+        print("    Window size: ", packetsList[x+3].win)
+        
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 # Print total number of flows
-print(numOfFlows, "flows")
+print(flowCount, "flows detected")
