@@ -14,7 +14,7 @@ def inet_to_str(inet):
     except ValueError:
         return socket.inet_ntop(socket.AF_INET6, inet)
 
-#Create a new flow and parse the data
+# Create a new flow and parse the data
 def new_flow(eth):
     global numOfFlows
     ip = eth.data
@@ -29,7 +29,9 @@ def new_flow(eth):
     if (sPort and sIP and Dport and dIP):
         numOfFlows +=1
 
-    # Print Basic Data
+    # TODO: should I combine all packets from same IP and port into a group?
+    # Print Basic Data 
+    # part (a)
     print("Source Port: ", tcp.sport)
     print("Source IP: ", inet_to_str(ip.src))
     print("Destination Port: ", tcp.dport)
@@ -37,11 +39,12 @@ def new_flow(eth):
     
     # For the first two transactions, print the values of the
     # Seq number, Ack number, and Recieve window size
+    # part (b)
     print("Sequence number: ", tcp.seq )
     print("Ack number: ", tcp.ack)
     print("Window size: ", tcp.win)
 
-    #TODO: Print Sender throughput
+    #TODO: Print Sender throughput aka part (3)
 
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
