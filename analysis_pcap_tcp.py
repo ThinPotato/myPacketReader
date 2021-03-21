@@ -42,19 +42,6 @@ def new_flow():
         packetsList.append(tcp)
         ipList.append(ip)
 
-        # TODO: should I combine all packets from same IP and port into a group?
-       
-        
-        
-        # # For the first two transactions, print the values of the
-        # # Seq number, Ack number, and Recieve window size
-       
-
-        # #TODO: Print Sender throughput aka part (3)
-
-        #
-        
-
 new_flow()
 
 #Check for 3 way handshakes
