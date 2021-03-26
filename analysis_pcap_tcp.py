@@ -39,10 +39,8 @@ def new_flow():
         # Count flows
         if ((tcp.flags & dpkt.tcp.TH_SYN) and (tcp.flags & dpkt.tcp.TH_ACK)):
             flowCount +=1
-        # ~~~~~~~~I MADE THE ASSUMPTION THAT WE ARE ONLY INTERESTED IN FLOWS CREATED BY THE SENDER.~~~
-        # ~~~~~~~~IF THIS ASSUMPTION IS WRONG DELETE THE IF STATEMENT BELOW~~~~~~~~
-        if(tcp.sport != 80):
-            flowDictionary[tcp.sport, inet_to_str(ip.src), tcp.dport, inet_to_str(ip.dst)].append(ip)
+
+        flowDictionary[tcp.sport, inet_to_str(ip.src), tcp.dport, inet_to_str(ip.dst)].append(ip)
 
 new_flow()
 
@@ -54,10 +52,12 @@ for flows in flowDictionary:
     packetSize=0
     window =0
     for x in range(len(packetsList)):
-        # ~~~Estimate window size~~~
-        # If packet is ack increase estimated window by 1
-        if(packetsList[x].data.flags & dpkt.tcp.TH_ACK):
-            estimatedWindow +=1
+        # Homework asks for congestion window estimated at SENDER. So we ignore port 80 which is the reciever
+        if(packetsList[x].data.sport != 80):
+            # ~~~Estimate window size~~~
+            # If packet is ack increase estimated window by 1
+            if(packetsList[x].data.flags & dpkt.tcp.TH_ACK):
+                estimatedWindow +=1
 
         #~~Find number of times retransmission occured~~
         # Due to tripple ack
@@ -65,11 +65,13 @@ for flows in flowDictionary:
         if all(v.data.ack == subPacketsList[0].data.ack for v in subPacketsList):
             if all(u.data.seq == subPacketsList[0].data.seq for u in subPacketsList):
                 numofFails += 1
-                estimatedWindow //=2
+                if(packetsList[x].data.sport != 80):
+                    estimatedWindow //=2
         # Due to timeout
         if(packetsList[x-1].data.seq > packetsList[x].data.seq):
             numofTimeout += 1
-            estimatedWindow //=2
+            if(packetsList[x].data.sport != 80):
+                estimatedWindow //=2
         lastSeq = packetsList[x].data.seq
             # Print Basic Data 
                 # part (a)
@@ -79,27 +81,26 @@ for flows in flowDictionary:
             print("Destination Port: ", packetsList[x+1].data.dport)
             print("Destination IP: ", inet_to_str(packetsList[x+1].dst))
                 # part (b)
-            print("\nFirst Transaction:")
-            print("    Sequence number: ", packetsList[x+2].data.seq )
-            print("    Ack number: ", packetsList[x+2].data.ack)
-            print("    Window size: ", packetsList[x+2].data.win)
-            print("\nSecond Transaction:")
-            print("    Sequence number: ", packetsList[x+3].data.seq )
-            print("    Ack number: ", packetsList[x+3].data.ack)
-            print("    Window size: ", packetsList[x+3].data.win)
+            if(packetsList[x].data.sport != 80):
+                print("\nFirst Transaction:")
+                print("    Sequence number: ", packetsList[x+2].data.seq )
+                print("    Ack number: ", packetsList[x+2].data.ack)
+                print("    Window size: ", packetsList[x+2].data.win)
+                print("\nSecond Transaction:")
+                print("    Sequence number: ", packetsList[x+3].data.seq )
+                print("    Ack number: ", packetsList[x+3].data.ack)
+                print("    Window size: ", packetsList[x+3].data.win)
 
         if (x < 4):
             print("\nestimated window size for Transaction",x,":", estimatedWindow)
         packetSize += len(packetsList[x].data.data)
         
         window += dpkt.tcp.TCP_OPT_WSCALE
-    print("size: ",packetSize, "bytes")
+    if(packetsList[x].data.sport != 80):
+        print("throughput: ",packetSize, "bytes")
     print("Calculated Average window size: ", (window * 16385)/len(packetsList))
         
-        
-
-        
-    print("\nNumber of retramissions due to tripple ack duplicate:", numofFails)
+    print("\nNumber of retramissions due to tripple ACK duplicate:", numofFails)
     print("Number of retramissions due to timeout:", numofTimeout)
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 # Print total number of flows
