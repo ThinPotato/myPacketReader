@@ -10,6 +10,7 @@ flowCount = 0
 lastPacketBeforeCloseLocation = 0
 packetSize = 0
 numofFails = 0
+estimatedWindow =1
 
 # Convert byte data to numbers
 def inet_to_str(inet):
@@ -38,6 +39,8 @@ def new_flow():
         # Count flows
         if ((tcp.flags & dpkt.tcp.TH_SYN) and (tcp.flags & dpkt.tcp.TH_ACK)):
             flowCount +=1
+        # ~~~~~~~~I MADE THE ASSUMPTION THAT WE ARE ONLY INTERESTED IN FLOWS CREATED BY THE SENDER.~~~
+        # ~~~~~~~~IF THIS ASSUMPTION IS WRONG DELETE THE IF STATEMENT BELOW~~~~~~~~
         if(tcp.sport != 80):
             flowDictionary[tcp.sport, inet_to_str(ip.src), tcp.dport, inet_to_str(ip.dst)].append(ip)
 
@@ -50,17 +53,23 @@ for flows in flowDictionary:
     packetsList = flowDictionary[flows]
     packetSize=0
     window =0
-    estimatedWindow =1
     for x in range(len(packetsList)):
+        # ~~~Estimate window size~~~
+        # If packet is ack increase estimated window by 1
+        if(packetsList[x].data.flags & dpkt.tcp.TH_ACK):
+            estimatedWindow +=1
+
         #~~Find number of times retransmission occured~~
         # Due to tripple ack
         subPacketsList = packetsList[x:x+3]
         if all(v.data.ack == subPacketsList[0].data.ack for v in subPacketsList):
             if all(u.data.seq == subPacketsList[0].data.seq for u in subPacketsList):
                 numofFails += 1
+                estimatedWindow //=2
         # Due to timeout
         if(packetsList[x-1].data.seq > packetsList[x].data.seq):
             numofTimeout += 1
+            estimatedWindow //=2
         lastSeq = packetsList[x].data.seq
             # Print Basic Data 
                 # part (a)
@@ -78,7 +87,9 @@ for flows in flowDictionary:
             print("    Sequence number: ", packetsList[x+3].data.seq )
             print("    Ack number: ", packetsList[x+3].data.ack)
             print("    Window size: ", packetsList[x+3].data.win)
-        
+
+        if (x < 4):
+            print("\nestimated window size for Transaction",x,":", estimatedWindow)
         packetSize += len(packetsList[x].data.data)
         
         window += dpkt.tcp.TCP_OPT_WSCALE
