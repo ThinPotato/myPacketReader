@@ -100,7 +100,7 @@ for flows in flowDictionary:
         print("throughput: ",packetSize, "bytes")
     print("Calculated Average window size: ", (window * 16385)/len(packetsList))
         
-    print("\nNumber of retramissions due to tripple ACK duplicate:", numofFails)
+    print("\nNumber of retramissions due to triple ACK duplicate:", numofFails)
     print("Number of retramissions due to timeout:", numofTimeout)
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 # Print total number of flows
