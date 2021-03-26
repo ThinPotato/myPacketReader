@@ -70,6 +70,12 @@ for x in range(len(packetsList)-3):
         lastPacketBeforeCloseLocation = x-1
         print("size: ",packetSize, "bytes")
         
+        # ~~~Estimate Congestion window~~~
+        # Grab window multiplyer
+        window = dpkt.tcp.TCP_OPT_WSCALE
+        print("Calculated window size: ", window * 16385)
+        
+
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 # Print total number of flows
 print(flowCount, "flows detected")
