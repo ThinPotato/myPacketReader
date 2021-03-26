@@ -1,14 +1,15 @@
 import dpkt
 import socket
+from collections import defaultdict
 
 # Grab raw binary information
 rawPacket = open('packet.pcap','rb')
+flowDictionary = defaultdict(list)
 pcap = dpkt.pcap.Reader(rawPacket)
 flowCount = 0
-packetsList = []
-ipList = []
 lastPacketBeforeCloseLocation = 0
 packetSize = 0
+numofFails = 0
 
 # Convert byte data to numbers
 def inet_to_str(inet):
@@ -37,45 +38,58 @@ def new_flow():
         # Count flows
         if ((tcp.flags & dpkt.tcp.TH_SYN) and (tcp.flags & dpkt.tcp.TH_ACK)):
             flowCount +=1
-             
-        # load into packetsList
-        packetsList.append(tcp)
-        ipList.append(ip)
+        if(tcp.sport != 80):
+            flowDictionary[tcp.sport, inet_to_str(ip.src), tcp.dport, inet_to_str(ip.dst)].append(ip)
 
 new_flow()
 
 #Check for 3 way handshakes
-for x in range(len(packetsList)-3):
-    #if ((packetsList[x].flags & dpkt.tcp.TH_SYN) and ((packetsList[x+1].flags & dpkt.tcp.TH_ACK) and (packetsList[x+1].flags & dpkt.tcp.TH_SYN) and packetsList[x+2].flags & dpkt.tcp.TH_ACK)):
-    if (packetsList[x].flags & dpkt.tcp.TH_SYN) and (packetsList[x].flags & dpkt.tcp.TH_ACK):
-        # Print Basic Data 
-            # part (a)
-        print("Source Port: ", packetsList[x].sport)
-        print("Source IP: ", inet_to_str(ipList[x].src))
-        print("Destination Port: ", packetsList[x].dport)
-        print("Destination IP: ", inet_to_str(ipList[x].dst))
-            # part (b)
-        print("\nFirst Transaction:")
-        print("    Sequence number: ", packetsList[x+2].seq )
-        print("    Ack number: ", packetsList[x+2].ack)
-        print("    Window size: ", packetsList[x+2].win)
-        print("\nSecond Transaction:")
-        print("    Sequence number: ", packetsList[x+3].seq )
-        print("    Ack number: ", packetsList[x+3].ack)
-        print("    Window size: ", packetsList[x+3].win)
-        # Check for last sections final location
-        if(x > 1):
-            for y in range(lastPacketBeforeCloseLocation, x-1):
-                packetSize += len(packetsList[y])
-        lastPacketBeforeCloseLocation = x-1
-        print("size: ",packetSize, "bytes")
+for flows in flowDictionary:
+    numofFails=0
+    numofTimeout = 0
+    packetsList = flowDictionary[flows]
+    packetSize=0
+    window =0
+    estimatedWindow =1
+    for x in range(len(packetsList)):
+        #~~Find number of times retransmission occured~~
+        # Due to tripple ack
+        subPacketsList = packetsList[x:x+3]
+        if all(v.data.ack == subPacketsList[0].data.ack for v in subPacketsList):
+            if all(u.data.seq == subPacketsList[0].data.seq for u in subPacketsList):
+                numofFails += 1
+        # Due to timeout
+        if(packetsList[x-1].data.seq > packetsList[x].data.seq):
+            numofTimeout += 1
+        lastSeq = packetsList[x].data.seq
+            # Print Basic Data 
+                # part (a)
+        if (x ==1):
+            print("Source Port: ", packetsList[x+1].data.sport)
+            print("Source IP: ", inet_to_str(packetsList[x+1].src))
+            print("Destination Port: ", packetsList[x+1].data.dport)
+            print("Destination IP: ", inet_to_str(packetsList[x+1].dst))
+                # part (b)
+            print("\nFirst Transaction:")
+            print("    Sequence number: ", packetsList[x+2].data.seq )
+            print("    Ack number: ", packetsList[x+2].data.ack)
+            print("    Window size: ", packetsList[x+2].data.win)
+            print("\nSecond Transaction:")
+            print("    Sequence number: ", packetsList[x+3].data.seq )
+            print("    Ack number: ", packetsList[x+3].data.ack)
+            print("    Window size: ", packetsList[x+3].data.win)
         
-        # ~~~Estimate Congestion window~~~
-        # Grab window multiplyer
-        window = dpkt.tcp.TCP_OPT_WSCALE
-        print("Calculated window size: ", window * 16385)
+        packetSize += len(packetsList[x].data.data)
+        
+        window += dpkt.tcp.TCP_OPT_WSCALE
+    print("size: ",packetSize, "bytes")
+    print("Calculated Average window size: ", (window * 16385)/len(packetsList))
+        
         
 
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        
+    print("\nNumber of retramissions due to tripple ack duplicate:", numofFails)
+    print("Number of retramissions due to timeout:", numofTimeout)
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 # Print total number of flows
 print(flowCount, "flows detected")
