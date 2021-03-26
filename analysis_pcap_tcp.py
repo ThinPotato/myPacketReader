@@ -91,7 +91,7 @@ for flows in flowDictionary:
                 print("    Ack number: ", packetsList[x+3].data.ack)
                 print("    Window size: ", packetsList[x+3].data.win)
 
-        if (x < 4):
+        if (x < 4 & x > 1):
             print("\nestimated window size for Transaction",x,":", estimatedWindow)
         packetSize += len(packetsList[x].data.data)
         
