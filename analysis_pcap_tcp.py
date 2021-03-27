@@ -8,6 +8,7 @@ flowDictionary = defaultdict(list)
 pcap = dpkt.pcap.Reader(rawPacket)
 flowCount = 0
 estimatedWindow =1
+RECIEVER = "128.208.2.198"
 
 # Convert byte data to numbers
 def inet_to_str(inet):
@@ -45,7 +46,7 @@ for flows in flowDictionary:
     window =0
     for x in range(len(packetsList)):
         # Homework asks for congestion window estimated at SENDER. So we ignore port 80 which is the reciever
-        if(packetsList[x].data.sport != 80):
+        if(inet_to_str(packetsList[x].src) != RECIEVER):
         # ~~~Estimate window size~~~
             # If packet is ack increase estimated window by 1
             if(packetsList[x].data.flags & dpkt.tcp.TH_ACK):
@@ -53,29 +54,34 @@ for flows in flowDictionary:
 
     #~~Find number of times retransmission occured~~~
         # Due to tripple ack
-        subPacketsList = packetsList[x:x+3]
-        if all(v.data.ack == subPacketsList[0].data.ack for v in subPacketsList):
-            if all(u.data.seq == subPacketsList[0].data.seq for u in subPacketsList):
-                numofFails += 1
-            # ~~~Estimate window size~~~
-                if(packetsList[x].data.sport != 80):
-                    estimatedWindow //=2
+        subPacketsList = packetsList[x:x+6]
+        if(x % 2 ==0):
+            if all(v.data.ack == subPacketsList[0].data.ack for v in subPacketsList):
+                if all(u.data.seq == subPacketsList[0].data.seq for u in subPacketsList):
+                    numofFails += 1
+                # ~~~Estimate window size~~~
+                    if(inet_to_str(packetsList[x].src) != RECIEVER):
+                        estimatedWindow //=2
         # Due to timeout
         if(packetsList[x-1].data.seq > packetsList[x].data.seq):
             numofTimeout += 1
         # ~~~Estimate window size~~~
-            if(packetsList[x].data.sport != 80):
+            if(inet_to_str(packetsList[x].src) != RECIEVER):
                 estimatedWindow //=2
         lastSeq = packetsList[x].data.seq
             # Print Basic Data, part A
                 # part (a)
         if (x ==1):
+            if(inet_to_str(packetsList[x].src) != RECIEVER):
+                print("\n~~~NEW FLOW~~~\n")
+            else:
+                print("\n~~~FLOW RESPONSE FROM RECIEVER~~~\n")
             print("Source Port: ", packetsList[x+1].data.sport)
             print("Source IP: ", inet_to_str(packetsList[x+1].src))
             print("Destination Port: ", packetsList[x+1].data.dport)
             print("Destination IP: ", inet_to_str(packetsList[x+1].dst))
                 # part (b)
-            if(packetsList[x].data.sport != 80):
+            if(inet_to_str(packetsList[x].src) != RECIEVER):
                 print("\nFirst Transaction:")
                 print("    Sequence number: ", packetsList[x+2].data.seq )
                 print("    Ack number: ", packetsList[x+2].data.ack)
@@ -91,7 +97,7 @@ for flows in flowDictionary:
         
         window += dpkt.tcp.TCP_OPT_WSCALE
     #~~~ Part A (c) ~~~
-    if(packetsList[x].data.sport != 80):
+    if(inet_to_str(packetsList[x].src) != RECIEVER):
         print("throughput: ",packetSize, "bytes")
     #~~~Part B(1)~~~
     print("Calculated Average window size: ", (window * 16385)/len(packetsList))
