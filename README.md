@@ -11,14 +11,7 @@ In order to estimat the congestion window, I have an assumed starting size of 1.
 In order to determine the number of retransmissions due to a triple ACK duplicate:
 Each duplicate is defined as two packets with the same SEQ number.
 A triple duplicate is a set of 3 duplicates.
-For every 5 packets, my program subsets the current list of packets in a flow into sets of 6 
-(as not to accidentally count a triple duplicate twice.)
-If all those packets share the same SEQ number, it increases the count by one.
-This count is printed at the end of the flow.
+For every 5 packets, my program subsets the current list of packets in a flow into sets of 6 (as not to accidentally count a triple duplicate twice.) If all those packets share the same SEQ number, it increases the count by one. This count is printed at the end of the flow.
 
 ### Algorithm 2
-In order to determine the number of retransmissions due to a timeout:
-Each packet is checked to see if its SEQ number is *smaller* than the previous.
-If this is the case--which it ideally should never be-- it is considered
-an out of order packet and will eventually need to be retransmitted. 
-Each time this occurs, we increase the count and print it at the end of the flow.
+In order to determine the number of retransmissions due to a timeout: Each packet is checked to see if its SEQ number is *smaller* than the previous. If this is the case--which it ideally should never be-- it is considered an out of order packet and will eventually need to be retransmitted. Each time this occurs, we increase the count and print it at the end of the flow.
