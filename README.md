@@ -1,5 +1,5 @@
 # How to use
-Either add 'packet.pcap' to the local directory OR,
+Either add 'packet.pcap' to the local directory **OR**,
 change the variable pcap = dpkt.pcap.reader(/your/pcap/directory/here)
 
 # Summary
