@@ -3,6 +3,11 @@ Either add 'packet.pcap' to the local directory **OR**,
 change the variable pcap = dpkt.pcap.reader(/your/pcap/directory/here)
 
 # Summary
+## General Approach
+This program uses a dictionary to store all unique flows as defined by "the tuple: (source port, source IP address, destination port, destination IP address.)" However, while there may be six flows total, we are mostly only interested in the SENDER's (130.245.145.12) perspective. For this reason, flows initiated by the RECIEVER (128.208.2.198) are still outputted, but are not counted in the flow count, are denoted differently, and less information is displayed.
+
+For each of these flows, every packet is stored in a list, that list is parsed through, and the below algorithms are employed to present relavent information. 
+
 ## Algorithm in part (A)
 In order to estimat the congestion window, I have an assumed starting size of 1. Every time a packet is not detected as a retransmission, that value is increased by 1. For every retransmission due to any reason, it is divided by 2, with any decimal values dropped.
 
