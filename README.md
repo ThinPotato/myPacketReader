@@ -9,7 +9,7 @@ This program uses a dictionary to store all unique flows as defined by "the tupl
 For each of these flows, every packet is stored in a list, that list is parsed through, and the below algorithms are employed to present relavent information. 
 
 ## Algorithm in part (A)
-In order to estimat the congestion window, I have an assumed starting size of 1. Every time a packet is not detected as a retransmission, that value is increased by 1. For every retransmission due to any reason, it is divided by 2, with any decimal values dropped.
+In order to estimate the congestion window, I have an assumed starting size of 1. Every time a packet is not detected as a retransmission, that value is increased by 1. For every retransmission due to any reason, it is divided by 2, with any decimal values dropped.
 
 ## Algorithm in part (B)
 ### Algorithm 1
